@@ -1,15 +1,37 @@
+import { useEffect, useState} from "react";
 import "./App.css";
+import Navbar from "./components/Navbar";
+import SearchAdd from "./components/SearchAdd";
+import ContactDetail from "./components/ContactDetail";
+import {db} from "./config/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 function App() {
+
+  const [contacts, setContacts] = useState([]);
+
+  useEffect(() => {
+    const getContacts = async () => {
+      const contactsRef = collection(db, "contacts");
+      const contactsSnapShot = await getDocs(contactsRef);
+      const contactsList = contactsSnapShot.docs.map((doc) => {
+        return {
+          id: doc.id,
+          ...doc.data()
+        }
+      })
+      setContacts(contactsList);
+    }
+    getContacts();
+  }, [])
+
   return (
     <>
-      <div>
-        <p className="mt-5 pd-10 justify-start flex ">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Fugiat
-          repellendus odit accusamus iste quisquam sequi id vitae. Doloribus
-          porro facilis odio? Quasi, sint!
-        </p>
+      <div className="max-w-[370px] mx-auto">
+        <Navbar></Navbar>
+        <SearchAdd></SearchAdd>
       </div>
+      <ContactDetail contacts = {contacts}></ContactDetail>
     </>
   );
 }
