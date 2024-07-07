@@ -3,37 +3,63 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import SearchAdd from "./components/SearchAdd";
 import ContactDetail from "./components/ContactDetail";
+import AddandUpdateContact from "./components/AddandUpdateContact";
 import {db} from "./config/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot } from "firebase/firestore";
+import useDisclouse from "./hooks/useDisclouse";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function App() {
-
+  
   const [contacts, setContacts] = useState([]);
+  const [filterContact, setFilterContact] = useState([]);
+  const {isOpen, onClose, onOpen} = useDisclouse();
+
 
   useEffect(() => {
+    
     const getContacts = async () => {
-      const contactsRef = collection(db, "contacts");
-      const contactsSnapShot = await getDocs(contactsRef);
-      const contactsList = contactsSnapShot.docs.map((doc) => {
-        return {
-          id: doc.id,
-          ...doc.data()
-        }
-      })
-      setContacts(contactsList);
+      try {
+        const contactsRef = collection(db, "contacts");
+        onSnapshot(contactsRef, (snapshot) => {
+          const contactsList = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data()
+          }));
+          setContacts(contactsList);
+          setFilterContact(contactsList); 
+        })
     }
-    getContacts();
-  }, [])
+    catch (error) {
+      console.log(error.message);
+    }
+  }
+   getContacts(); 
+  }, []);
+
+
+  const filterContacts = (e) => {
+    const contactValue = e.target.value.toLowerCase();
+    const filtered = contacts.filter((contact) => 
+      contact.name.toLowerCase().includes(contactValue)
+    );
+    setFilterContact(filtered);
+  }
 
   return (
     <>
       <div className="max-w-[370px] mx-auto">
         <Navbar></Navbar>
-        <SearchAdd></SearchAdd>
+        <SearchAdd filterContacts={filterContacts} onOpen = {onOpen}></SearchAdd>
       </div>
-      <ContactDetail contacts = {contacts}></ContactDetail>
+      <ContactDetail contacts = {filterContact}></ContactDetail>
+      <AddandUpdateContact isOpen={isOpen} onClose={onClose}/>
+      <ToastContainer position="bottom-center"/>
     </>
   );
 }
+
 
 export default App;
